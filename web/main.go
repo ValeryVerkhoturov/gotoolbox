@@ -4,6 +4,7 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -140,6 +141,50 @@ func HTML(status int, t *template.Template, template string, data interface{}, h
 		Status:      status,
 		ContentType: "text/html",
 		Content:     &buf,
+		Headers:     headers,
+	}
+}
+
+// JS renders an embedded script to a web response
+func EmbeddedJS(status int, t *template.Template, template string, data interface{}, headers web.Headers) *web.Response {
+
+	//render template to buffer
+	var buf bytes.Buffer
+	if err := t.ExecuteTemplate(&buf, template, data); err != nil {
+		log.Println(err)
+		return Empty(http.StatusInternalServerError)
+	}
+	var js = fmt.Sprintf(`
+            (function() {
+                var wrapper = document.createElement("div");
+                wrapper.innerHTML = unescape(`+"`%s`"+`);
+                document.body.appendChild(wrapper);
+
+				// Move all scripts from wrapper to real script elements
+				Array.from(wrapper.querySelectorAll('script')).forEach(function(oldScript) {
+					var newScript = document.createElement('script');
+
+					Array.from(oldScript.attributes).forEach(function(attr) {
+						newScript.setAttribute(attr.name, attr.value);
+					});
+
+					if (oldScript.src) {
+						newScript.src = oldScript.src;
+					} else {
+						newScript.textContent = oldScript.textContent;
+					}
+	
+					oldScript.parentNode.replaceChild(newScript, oldScript);
+				});
+            })();
+        `, &buf)
+
+	var jsReader = bytes.NewBufferString(js)
+
+	return &Response{
+		Status:      status,
+		ContentType: "application/javascript",
+		Content:     jsReader,
 		Headers:     headers,
 	}
 }
