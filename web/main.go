@@ -146,7 +146,7 @@ func HTML(status int, t *template.Template, template string, data interface{}, h
 }
 
 // JS renders an embedded script to a web response
-func EmbeddedJS(status int, t *template.Template, template string, data interface{}, headers web.Headers) *web.Response {
+func EmbeddedJS(status int, t *template.Template, template string, data interface{}, headers Headers) *Response {
 
 	//render template to buffer
 	var buf bytes.Buffer
