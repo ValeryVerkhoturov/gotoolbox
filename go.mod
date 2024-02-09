@@ -1,3 +1,3 @@
-module github.com/jritsema/gotoolbox
+module github.com/ValeryVerkhoturov/gotoolbox
 
 go 1.18
